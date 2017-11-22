@@ -15,32 +15,26 @@ namespace SDOrleans
 
     public class FacGrain : Grain, IFacGrain
     {
-        private long solution;
+        public long answer { get; private set; }
 
-
-        public override Task OnActivateAsync()
+        public async override Task OnActivateAsync()
         {
-            Console.WriteLine($"Activating {this.GetPrimaryKeyLong()}");
-            return Task.CompletedTask;
+            Console.WriteLine($"  activating {this.GetPrimaryKeyLong()}");
         }
 
         public async Task<long> Calculate()
         {
-            var value = this.GetPrimaryKeyLong();
-            if (value <= 1) return 1;
-            if (solution > 0) return solution;
+            var input = this.GetPrimaryKeyLong();
+            if (input <= 1) return 1;
+            if (answer > 0) return answer;
 
-            var valueToMultiple = await this
-                .GrainFactory
-                .GetGrain<IFacGrain>(value - 1)
-                .Calculate();
-            
-            this.solution = valueToMultiple * value;
+            var nextGrain = this.GrainFactory.GetGrain<IFacGrain>(input - 1);
+            var nextValue = await nextGrain.Calculate();
 
-            return solution;
+            this.answer = nextValue * input;
+            return answer;
         }
     }
-
 
     class Program
     {
@@ -52,10 +46,13 @@ namespace SDOrleans
                 var input = int.Parse(Console.ReadLine());
 
                 var grain = client.GetGrain<IFacGrain>(input);
-                var answer = await grain.Calculate();
-                Console.WriteLine($"answer {input}! = {answer}");
+                var result = await grain.Calculate();
+
+                Console.WriteLine($"  {input}! = {result}");
+
             }
-            
+
+
         }
 
         #region boilerplate
