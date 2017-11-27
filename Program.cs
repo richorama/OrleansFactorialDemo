@@ -8,33 +8,35 @@ using Microsoft.Extensions.Logging;
 
 namespace SDOrleans
 {
-    public interface IFacGrain : IGrainWithIntegerKey
-    {
-        Task<long> Calculate();
-    }
+   
+   public interface IFacGrain : IGrainWithIntegerKey
+   {
+       Task<long> Calculate();
+   }
 
     public class FacGrain : Grain, IFacGrain
     {
-        public long answer { get; private set; }
+        private long answer;
 
-        public async override Task OnActivateAsync()
+        public override Task OnActivateAsync()
         {
-            Console.WriteLine($"  activating {this.GetPrimaryKeyLong()}");
+            Console.WriteLine(this.GetPrimaryKeyLong());
+            return Task.CompletedTask;
         }
 
         public async Task<long> Calculate()
         {
-            var input = this.GetPrimaryKeyLong();
-            if (input <= 1) return 1;
+            var key = this.GetPrimaryKeyLong();
+
+            if (key <= 1) return 1;
             if (answer > 0) return answer;
 
-            var nextGrain = this.GrainFactory.GetGrain<IFacGrain>(input - 1);
-            var nextValue = await nextGrain.Calculate();
-
-            this.answer = nextValue * input;
+            answer = key * await this.GrainFactory.GetGrain<IFacGrain>(key - 1).Calculate();
             return answer;
         }
     }
+
+
 
     class Program
     {
@@ -44,14 +46,11 @@ namespace SDOrleans
             while(true)
             {
                 var input = int.Parse(Console.ReadLine());
-
                 var grain = client.GetGrain<IFacGrain>(input);
-                var result = await grain.Calculate();
+                var answer = await grain.Calculate();
 
-                Console.WriteLine($"  {input}! = {result}");
-
+                Console.WriteLine($"  {input}! = {answer}");
             }
-
 
         }
 
