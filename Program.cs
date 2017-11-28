@@ -8,51 +8,58 @@ using Microsoft.Extensions.Logging;
 
 namespace SDOrleans
 {
-   
-   public interface IFacGrain : IGrainWithIntegerKey
-   {
-       Task<long> Calculate();
-   }
-
-    public class FacGrain : Grain, IFacGrain
-    {
-        private long answer;
-
-        public override Task OnActivateAsync()
-        {
-            Console.WriteLine(this.GetPrimaryKeyLong());
-            return Task.CompletedTask;
-        }
-
-        public async Task<long> Calculate()
-        {
-            var key = this.GetPrimaryKeyLong();
-
-            if (key <= 1) return 1;
-            if (answer > 0) return answer;
-
-            answer = key * await this.GrainFactory.GetGrain<IFacGrain>(key - 1).Calculate();
-            return answer;
-        }
-    }
-
-
-
     class Program
     {
+
+        public interface IFac : IGrainWithIntegerKey
+        {
+            Task<long> Calculate();
+        }
+
+
+        public class Fac : Grain, IFac
+        {
+            private long answer;
+
+            public override Task OnActivateAsync()
+            {
+                Console.WriteLine($"  activating {this.GetPrimaryKeyLong()}");
+                return Task.CompletedTask;
+            }
+
+
+            public async Task<long> Calculate()
+            {
+                if (answer > 0) return answer;
+
+                var value = this.GetPrimaryKeyLong();
+                if (value <= 1) return 1;
+ 
+                var grain = this.GrainFactory.GetGrain<IFac>(value - 1);
+                answer = value * await grain.Calculate();
+
+                return answer;
+
+            }
+        }
+
+
 
         private static async Task Test(IClusterClient client)
         {
             while(true)
             {
                 var input = int.Parse(Console.ReadLine());
-                var grain = client.GetGrain<IFacGrain>(input);
+
+                var grain = client.GetGrain<IFac>(input);
+
                 var answer = await grain.Calculate();
 
-                Console.WriteLine($"  {input}! = {answer}");
+                Console.WriteLine($"  {input}! answer {answer}");
             }
-
         }
+
+
 
         #region boilerplate
 
