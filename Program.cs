@@ -80,16 +80,11 @@ namespace SDOrleans
         {
             Console.WriteLine("Starting silo");
             // define the cluster configuration
-            var config = ClusterConfiguration.LocalhostPrimarySilo();
-            config.AddMemoryStorageProvider();
-            config.RegisterDashboard();
 
             var host = new SiloHostBuilder()
-                .UseConfiguration(config)
-                .UseDashboard(x => {
-                    x.HostSelf = true;
-                })
-                .AddApplicationPartsFromReferences(typeof(Program).Assembly)
+                .UseLocalhostClustering()
+                .AddMemoryGrainStorageAsDefault()
+                .UseDashboard()
                 .ConfigureLogging(logging => {
                     logging.AddConsole();
                     logging.SetMinimumLevel(LogLevel.Warning);
@@ -97,7 +92,6 @@ namespace SDOrleans
                 .Build();
 
             await host.StartAsync();
-            Console.WriteLine("Silo successfully started");
             return host;
         }
 
@@ -109,10 +103,8 @@ namespace SDOrleans
             {
                 try
                 {
-                    var config = ClientConfiguration.LocalhostSilo();
                     client = new ClientBuilder()
-                        .UseConfiguration(config)
-                        .AddApplicationPartsFromReferences(typeof(Program).Assembly)
+                        .UseLocalhostClustering()
                         .Build();
 
                     await client.Connect();
