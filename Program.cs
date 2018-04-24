@@ -79,12 +79,12 @@ namespace SDOrleans
         private static async Task<ISiloHost> StartSilo()
         {
             Console.WriteLine("Starting silo");
+            // define the cluster configuration
 
             var host = new SiloHostBuilder()
                 .UseLocalhostClustering()
-                .UseDashboard(x => {
-                    x.HostSelf = true;
-                })
+                .AddMemoryGrainStorageAsDefault()
+                .UseDashboard()
                 .ConfigureLogging(logging => {
                     logging.AddConsole();
                     logging.SetMinimumLevel(LogLevel.Warning);
@@ -92,7 +92,6 @@ namespace SDOrleans
                 .Build();
 
             await host.StartAsync();
-            Console.WriteLine("Silo successfully started");
             return host;
         }
 
